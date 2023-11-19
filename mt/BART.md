@@ -89,14 +89,49 @@ The training happens in two steps, but both steps backpropogate the cross-entrop
 **Reported results for WMT16 Romanian to English:**
 The original paper fine-tunes BART in the two stage manner as mentioned above and also compares it with a vanilla transformer baseline. They also use back-translation augmented data. The reported results are shown below with fixed BART and tuned BART being the results of the first and second fine-tuning stage respectively. They also reported that initial experiments without the back-translation data led to overfitting, which motivates additional research into regularization techniques.
 
+**Additional Experiments**
+We do some additional experiments with BART and MBART [9] to analyze their machine-translation performance. We do zero-shot inference with MBART-large-50 (```facebook/mbart-large-50-many-to-many-mmt```) a checkpoint which has been trained on 50 languages for machine translation. We also do some fine-tuning experiments with BART-base (`facebook/bart-base`) and BART-large (`facebook/bart-large`). The MBART model performs very well in a zero-shot setting, almost outperforming the baseline and Fixed-BART. However the fine-tuned BART models don't perform as well. We theorize this is because we don't do the 2-stage fine-tuning described in the paper and we don't use the backtranslated WMT16 Romanian-to-English data and instead use the regular dataset (https://huggingface.co/datasets/wmt16/viewer/ro-en). Additionally the models might be slightly under-trained due to limited computational resources. 
+
 | Model 	| RO-EN (BLEU) 	|
 |---	|---	|
 | Transformer Baseline 	| 36.8 	|
 | Fixed BART 	| 36.29 	|
-| Tuned BART 	| **37.96** 	|
+| Tuned BART 	| **37.96** 	|\
+| MBART-large-50 zeroshot* 	| 36.77	|
+| BART-base zeroshot* 	| 3.47 	|
+| BART-large zeroshot* 	|  3.29	|
+| BART-base* 	| 26.04 	|
+| BART-large* 	| 29.60 	|
+
+<model>* represent additional experiments
+
+### Case Study:
+We present a few case examples for the additional experiments we performed with MBART and BART. 
+
+#### **mBART**
+
+mBART performs very well as is shown by the BLEU score but the following examples highlight its abilities - 
+
+1. In the following example we see that the model is able to connect the terms "holding back" and "reluctance".
+   ##### Original - Experts believe November's Black Friday could be holding back spending.
+   ##### Translated -  Experts believe that November's Black Friday could lead to spending reluctance.
+
+2. A failure case can also be observed, where although the original sentence was talking about people being injured due to a crane crash, the translated sentence talks about a "Falling Macaral" which does not make much sense.
+   ##### Original - The Health Ministry said a total of 394 people were also injured after the crane crashed down.
+   ##### Translated -  Health Minister Says A Total of 394 People Injured in Falling Macaral
+
+#### **BART**
+We analyze some failure and success cases of our fine-tuned BART as well. 
+
+1. While it doesn't do well on BLEU score, there are potentially false positives like the example below, where the translation has "Secretary-General" but the reference has "Chief". "Secretary-General" is the same as the UN Chief, but BLEU as a metric doesn't consider their equivalence:
+    ##### Original - UN Chief Says There Is No Military Solution in Syria.
+    ##### Translated - The UN Secretary-General states that there are no military solutions in Syria.
+2. A tricky failure case is shown here. The reference uses the pronoun "He" but the translation contains "The Ban". The Romanian text also contains the term "Ban" but the reference implies it needs to be translated as the pronoun "he". 
+    ##### Original - He expressed regret that divisions in the council and among the Syrian people and regional powers "made this situation unsolvable."
+    ##### Translated - The Ban expressed his regret that divisions in the Council and between the Syrian people and regional powers 'made this situation untenable'.
 
 ### Comparing Effectiveness of Pre-training Objectives
-The BART model uses the following five transformations for pre-training:
+The BART model uses the following five transformations for pre-training: <br>
 **1. Token Masking:** Random tokens sampled and replaced with `[MASK]` tokens, inspired by BERT [2]. <br>
 **2. Token Deletion:** Random tokens deleted from input <br>
 **3. Text Infilling:** Text spans sampled from Poisson distribution (λ = 3) and replaced with `[MASK]`, inspired by SpanBERT [3]. <br>
@@ -121,8 +156,8 @@ They experiment with de-noising training with different comnbinations of pre-tra
 4. Pre-training objectives need to combined with other improvements. For e.g. the permuted language model baselines is worse than XLNet because it doesn't have relative-position embeddings and segment level recurrence.
 5. BART with Text-infilling performs well over most tasks (except ELI5).
 
-## Further Reading and Interesting Results
-Th
+<!-- ## Further Reading and Interesting Results -->
+<!-- Th -->
 
 <!-- ## Challenges in machine translation pre-training
 At present, the vast majority of AI tasks are basically statistical learning based on data, and the performance of the model depends on the quality and quantity of data to a large extent. It has become a new successful paradigm for NLP to use a large amount of cheap data to pre-train the model, then fine-tune with a small amount of annotation data in specific scenarios. For example, pre-trained on large-scale unlabeled text, BERT[2] can achieve good results on 11 NLU tasks after fine-tuning on limited annotation data. However, in multilingual machine translation, the paradigm of pre-training and fine-tuning has not yet achieved general success. The training objectives  of previous NLP pre-training methods such as BERT and GPT[5] have a large gap with machine translation, thus are not easy to use directly. mRASP proposed a new idea: it uses massive bilingual parallel corpus accumulated in multiple languages to jointly train a unified model, and then fine-tune based on it. Therefore the pre-training and fine-tuning objectives are as close as possible, so as to give greater play to the role of the pre-training model.
@@ -310,8 +345,9 @@ Figure 3: After removing the language identifier (Language token) at the beginni
 
 It can be seen that RAS does further draws closer the semantic vector representation, and synonymous sentences will be closely represented after mRASP.
 
+ -->
 ## Summary
-Back to the beginning of the article, Mr. Chao, a language genius, has mastered 33 dialects plus 7 foreign languages in his life. From Baoding in the north China to Fuzhou in the south, from the upper reaches to the lower reaches of the Yangtze River, from Berkeley in the United States to Paris in France, he can speak local languages with a local accent. And the establishment of a unified multilingual and cross-domain translation model is one of the ultimate goals of machine translation research. mRASP, which is in line with the language genius Yuen Ren Chao, has established a successful path from multilingual pre-training to fine-tuning to multiple machine translation models, which will also become a new paradigm of machine translation. ByteDance has applied this technology to the Volctrans system and you can try it in the web page attached at the end of the text. We are looking forward to the continuous emergence of new methods in this direction, making great strides towards the ultimate machine translation goal. In the next few years, the progress of machine translation can help everyone in dozens of countries become "Yuen Ren Chao" and truly communicate without language barriers. -->
+BART is a seq2seq encoder-decoder transformer model which has been trained using a variety of pre-training objectives including denoising-pretraining. The authors analyze a variety of comninations of pre-training objectives showing that choice of pre-training objectives greatly affects downstream task performance. The decoder trained using denoising pre-training can be beneficial for machine translation to English with clever fine-tuning that trains the encoder first for a different source language and then does minor fine-tuning for the whole seq2seq model. The base BART model can be further improved by multilingual pre-training with the denoising objective as shown by mBART [9]. Both the BART and mBART paper demonstrated contrary to prior work that end-to-end training of encoder-decoder models could benefit tasks like MT when done using a denoising objective.
 
 ## References
 [1] Sergey Edunov, Alexei Baevski, and Michael Auli. Pre-trained language model representations for language generation. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), 2019.
@@ -329,3 +365,5 @@ Back to the beginning of the article, Mr. Chao, a language genius, has mastered 
 [7] Li Dong, Nan Yang, Wenhui Wang, Furu Wei, Xiaodong Liu, Yu Wang, Jianfeng Gao, Ming Zhou, and Hsiao-Wuen Hon. Unified language model pretraining for natural language understanding and generation. arXiv preprint arXiv:1905.03197, 2019.
 
 [8] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. In Advances in neural information processing systems, pp. 5998–6008, 2017.
+
+[9] Tang, Y., C. Tran, Xian Li, Peng-Jen Chen, Naman Goyal, Vishrav Chaudhary, Jiatao Gu and Angela Fan. “Multilingual Translation with Extensible Multilingual Pretraining and Finetuning.” ArXiv abs/2008.00401 (2020)
